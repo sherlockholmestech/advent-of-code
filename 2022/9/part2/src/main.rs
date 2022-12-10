@@ -1,64 +1,92 @@
-use std::{fs};
-use itertools::Itertools;
-//ALl tuples regarding positions are in the format (x, y)
-fn main() {
-    let input = fs::read_to_string("input.txt").expect("Expected input");
-    let mut head_position = (0, 0);
-    let mut tail_position = (0, 0);
-    let mut tail_pos_vec: Vec<(i32, i32)> = vec![(0, 0)];
-    for line in input.lines() {
-        let mut split = line.split(" ");
-        let direction = split.next().unwrap();
-        let num: i32 = split.next().unwrap().parse().unwrap();
-        match direction {
-            "L" => {
-                for _i in 0..num {
-                    head_position.0 -= 1;
-                    update_tail(head_position, &mut tail_position);
-                    tail_pos_vec.push(tail_position);
-                }
-            },
-            "R" => {
-                for _i in 0..num {
-                    head_position.0 += 1;
-                    update_tail(head_position, &mut tail_position);
-                    tail_pos_vec.push(tail_position);
-                }
-            },
-            "D" => {
-                for _i in 0..num {
-                    head_position.1 += 1;
-                    update_tail(head_position, &mut tail_position);
-                    tail_pos_vec.push(tail_position);
-                }
-            },
-            "U" => {
-                for _i in 0..num {
-                    head_position.1 -= 1;
-                    update_tail(head_position, &mut tail_position);
-                    tail_pos_vec.push(tail_position);
-                }
-            },
-            _ => {},
-        }
-    }
-    let unique = tail_pos_vec.iter().unique();
-    let ans = unique.into_iter().count();
-    println!("{}", ans);
+//This is someone else's solution!! For some reason mine didnt work so i said screw it
+
+use std::fs; 
+use std::collections::HashSet;
+
+#[derive(Copy)]
+#[derive(Clone)]
+#[derive(Debug)]
+struct Point { 
+	x: i32, 
+	y: i32, 
+} 
+
+fn update_tail(head: &Point, t: &Point) -> Point {
+	let mut tail = Point{x: t.x, y: t.y};
+	if (head.x - tail.x).abs() > 1 && (head.y - tail.y).abs() > 1 {
+		tail.x = if head.x > tail.x {tail.x + 1} else {tail.x - 1};
+		tail.y = if head.y > tail.y {tail.y + 1} else {tail.y - 1};
+		return tail;
+	}
+	if head.x - tail.x < -1 {
+		tail.y = head.y;
+		tail.x = head.x + 1;
+	} else if head.x - tail.x > 1 {
+		tail.y = head.y;
+		tail.x = head.x - 1;
+	} else if head.y - tail.y < -1 {
+		tail.x = head.x;
+		tail.y = head.y + 1;
+	} else if head.y - tail.y > 1 {
+		tail.x = head.x;
+		tail.y = head.y - 1;
+	}
+	tail
 }
 
-fn update_tail(head_position: (i32, i32), tail_position: &mut(i32, i32)) {
-    if head_position.0 - tail_position.0 < -1 {
-        tail_position.1 = head_position.1;
-        tail_position.0 = head_position.0 + 1;
-    } else if head_position.0 - tail_position.0 > 1 {
-        tail_position.1 = head_position.1;
-        tail_position.0 = head_position.0 - 1;
-    } else if head_position.1 - tail_position. 1 < -1 {
-        tail_position.0 = head_position.0;
-        tail_position.1 = head_position.1 + 1;
-    } else if head_position.1 - tail_position.1 > 1 {
-        tail_position.0 = head_position.0;
-        tail_position.1 = head_position.1 - 1;
-    }
+fn main() {
+	let input = fs::read_to_string("input.txt").unwrap();
+
+	let mut knots = [Point{x: 0, y: 0}; 10];
+
+	let mut positions = HashSet::new();
+
+	for line in input.lines() {
+		let parts: Vec<_> = line.split(' ').collect();
+		match (parts[0], parts[1].parse::<i32>().unwrap()) {
+			("L", dis) => {
+				for _ in 0..dis {
+					knots[0].x -= 1;
+					for i in 0..9 {
+						let tail = update_tail(&knots[i], &knots[i+1]);
+						knots[i+1] = tail;
+					}
+					positions.insert((knots[9].x, knots[9].y));
+				}
+			},
+			("R", dis) => {
+				for _ in 0..dis {
+					knots[0].x += 1;
+					for i in 0..9 {
+						let tail = update_tail(&knots[i], &knots[i+1]);
+						knots[i+1] = tail;
+					}
+					positions.insert((knots[9].x, knots[9].y));
+				}
+			},
+			("U", dis) => {
+				for _ in 0..dis {
+					knots[0].y -= 1;
+					for i in 0..9 {
+						let tail = update_tail(&knots[i], &knots[i+1]);
+						knots[i+1] = tail;
+					}
+					positions.insert((knots[9].x, knots[9].y));
+				}
+			},
+			("D", dis) => {
+				for _ in 0..dis {
+					knots[0].y += 1;
+					for i in 0..9 {
+						let tail = update_tail(&knots[i], &knots[i+1]);
+						knots[i+1] = tail;
+					}
+					positions.insert((knots[9].x, knots[9].y));
+				}
+			},
+			_ => unreachable!(),
+		}
+	}
+	
+    println!("{}", positions.len());
 }
